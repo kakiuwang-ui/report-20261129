@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>八月以来的三块工作 · 2026-11-29 组会</title>
+<!--
+  组会报告的网页版。**整页零外链**：字体走系统字体栈，图全部自己画 SVG。
+  数一个都不写在这个文件里 —— 全在 data.js，由 gen_data.py 从原始 CSV 生成，
+  页面只渲染（设计与验收.md 判据 1）。想核某个数，点那一节的「出处」。
+  这一轮只做完「跨模态船舶重识别」一节，其余六节在目录里留空位并标「待建」。
+-->
+<link rel="stylesheet" href="styles.css">
+<!-- 主题要在样式生效之前就定下来，否则选了深色的人每次都先闪一下白底。
+     所以这段**必须内联在 head 里**，不能挪进 script.js（它在 body 末尾）。
+     内联不违反「整页零外链」—— 零外链管的是请求，这里一个请求都不发。 -->
+<script>
+(function () {
+  var t = "light";
+  try { t = localStorage.getItem("gis-web-theme") || "light"; } catch (e) { /* 隐私模式 */ }
+  document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+}());
+</script>
+</head>
+<body>
+
+<nav class="rail" aria-label="目录">
+  <a class="brand" href="#top"><b>八月以来的三块工作</b><span>2026-11-29 组会 · 网页版</span></a>
+  <button class="themebtn" id="theme" type="button"
+          title="在 浅色 / 深色 之间切换">主题：浅色</button>
+  <ol>
+    <li><a class="item" href="#top"><span class="ix">00</span><span>概览</span></a></li>
+    <li><a class="item" href="#route"><span class="ix">01</span><span>这条线怎么走的</span></a></li>
+    <li><a class="item sub" href="#rt-now">现在每条线站在哪</a></li>
+    <li><a class="item sub" href="#rt-habit">两件贯穿全程的做法</a></li>
+    <li><a class="item" href="#xmodal"><span class="ix">02</span><span>跨模态船舶重识别</span></a></li>
+    <li><a class="item sub" href="#xm-problem">问题：难在哪</a></li>
+    <li><a class="item sub" href="#xm-methods">五个方法各改了什么</a></li>
+    <li><a class="item sub" href="#xm-recipe">配方是否一致</a></li>
+    <li><a class="item sub" href="#xm-hoss">HOSS 上的结果</a></li>
+    <li><a class="item sub" href="#xm-cm">CMShipReID 上的结果</a></li>
+    <li><a class="item sub" href="#xm-ours">我们自己做的十二轮</a></li>
+    <li><a class="item" href="#comp6"><span class="ix">03</span><span>赛题 6</span></a></li>
+    <li><a class="item sub" href="#c6-score">考了多少</a></li>
+    <li><a class="item sub" href="#c6-track">分是怎么涨上来的</a></li>
+    <li><a class="item sub" href="#c6-leak">测试集是怎么解出来的</a></li>
+    <li><a class="item sub" href="#c6-local">本地为什么和线上对不上</a></li>
+    <li><a class="item" href="#stream"><span class="ix">04</span><span>流式增量重识别</span></a></li>
+    <li><a class="item sub" href="#st-split">数据怎么切的</a></li>
+    <li><a class="item sub" href="#st-pick">选哪个做法</a></li>
+    <li><a class="item sub" href="#st-budget">要留多少旧数据</a></li>
+    <li><a class="item sub" href="#st-why">为什么是这样</a></li>
+    <li><a class="item sub" href="#st-rounds">跑过的二十轮</a></li>
+    <li><a class="item" href="#neg"><span class="ix">05</span><span>同一条线上的负结果</span></a></li>
+    <li><a class="item sub" href="#neg-pick">想做的方法为什么没成</a></li>
+    <li><a class="item" href="#iod"><span class="ix">06</span><span>增量目标检测</span></a></li>
+    <li><a class="item sub" href="#iod-methods">三个方法各怎么做</a></li>
+    <li><a class="item sub" href="#iod-repro">复现到论文附近</a></li>
+    <li><a class="item sub" href="#iod-why">新类低的那 3.8 点</a></li>
+    <li><a class="item sub" href="#iod-backend">后端：点一下之后</a></li>
+    <li><a class="item sub" href="#iod-front">前端四块与一致性</a></li>
+    <li><a class="item" href="#next"><span class="ix">07</span><span>下一步</span></a></li>
+    <li><a class="item sub" href="#nx-patent">关于专利</a></li>
+    <li><a class="item sub" href="#nx-plan">接下来两周</a></li>
+  </ol>
+</nav>
+
+<main>
+<div class="wrap">
+
+<header class="hero" id="top">
+  <p class="eyebrow">2026-11-29 组会 · 网页版</p>
+  <h1>八月以来的三块工作</h1>
+  <p class="sub">跨模态船舶重识别与竞赛 · 流式增量重识别 · 增量目标检测软件。
+     这一版先把第一块做完 —— 它是收尾最彻底的一条线，材料也最全。</p>
+  <ul class="facts" id="hero-facts"></ul>
+  <p class="dim">页面上的数没有一个是手抄的：全部由 <code>gen_data.py</code> 从原始 CSV 生成，
+  出处收在每节末尾的折叠区。同一批数也供那份 PDF 用。</p>
+</header>
+
+<section id="route">
+  <p class="eyebrow">01</p><h1>八月到现在，这条线是怎么走的</h1>
+  <p class="lede">这几个月不是一条线走到底，而是<b>五条工作线并行</b>：有的收尾了，
+  有的在等方向，有的还活跃。下面这张图把它们画在同一条时间轴上 ——
+  <b>点任一个里程碑</b>看它当时定下了什么。</p>
+  <div class="flowbar">
+    <span class="flow-count" id="rt-count"></span>
+  </div>
+  <div id="rt-lanes"></div>
+  <div class="flow-detail" id="rt-detail"></div>
+  <p class="dim" id="rt-note"></p>
+</section>
+
+<section id="rt-now">
+  <p class="eyebrow">01.1</p><h2>现在每条线站在哪</h2>
+  <p>读完上面那张图知道「做过什么」，这张表回答「现在是什么局面」。</p>
+  <table id="rt-status"></table>
+  <p class="dim">状态取自 <code>ROADMAP.md</code> —— 那是「接下来做什么」的唯一出处，
+  每一行都有事前写死的停掉标准，没有标准的方向不许起跑。</p>
+</section>
+
+<section id="rt-habit">
+  <p class="eyebrow">01.2</p><h2>两件贯穿全程的做法</h2>
+  <p>这半年真正积累下来的不是某一个分数，是下面这两条 —— 它们被每一条线复用。</p>
+  <div class="cards" id="rt-habits"></div>
+</section>
+
+<section id="xmodal">
+  <p class="eyebrow">02</p><h1>跨模态船舶重识别</h1>
+  <p class="lede">同一条船，光学相机拍一张、SAR（雷达）或红外相机拍一张，判断这两张是不是同一条船。
+  工程动机是卫星反复过境同一片海域，每次用的相机不一定相同，要知道这次拍到的船是不是上次那条。</p>
+</section>
+
+<section id="xm-problem">
+  <p class="eyebrow">02.1 问题</p><h2>两种相机的图像没有共同的像素级规律</h2>
+  <p>难处不在「像不像」，而在两种成像方式之间没有共同的像素级规律。把它量成一个数：
+  <b>只看船体轮廓去判断两张图是不是同一条船，判得有多准（AUC）</b>（1 为完全判对，0.5 等于随机猜）。</p>
+  <figure><div id="auc-chart"></div>
+    <figcaption>同一个形状描述子，在同模态里分得开，跨模态等于没有信息。
+      所以不是描述子不好，是形状这条线索不跨模态传递。</figcaption></figure>
+  <div class="take" id="take-size"></div>
+  <h3>另有两个难点，性质不同</h3>
+  <ul id="two-hard"></ul>
+  <details class="src" id="src-problem"><summary>出处</summary></details>
+</section>
+
+<section id="xm-methods">
+  <p class="eyebrow">02.2 方法</p><h2>五个方法各在哪一步引入模块</h2>
+  <p>一次训练拆成九步对齐。四个名字先说清：<b>入口</b>是 patch embedding（两种相机共用一套还是各一套）、
+  <b>主干</b>是提特征的网络本体（这里五个方法都用 ViT-B/16）、<b>取特征层</b>是 BNNeck（检索特征从这层取）、
+  <b>起步权重</b>是训练开始时加载的现成权重。
+  <b>点方法名</b>可只看它自己引入的模块。</p>
+  <div class="pipe" id="pipe"></div>
+  <div class="legend">
+    <span><i class="s"></i>公共步骤：五个方法这一步做法相同</span>
+    <span><i class="d"></i>该方法自己引入的模块 —— 各篇论文的创新点都落在这些格子上</span>
+    <span><i class="n"></i>空格：这一步它没有引入任何模块</span>
+  </div>
+  <ul>
+    <li>第 4 行五格都是 ViT-B/16，连代码都几乎同一份：MOS 的主干文件与 TransOSS <b>逐字节相同</b>，
+      SDF-Net 的同名文件差 505 行，TransReID 那份只差 8 行 —— 这批方法同源。</li>
+    <li>MOS 与 TransReID 第 5 行都空，但 MOS 第 7 行有红框、TransReID 一个都没有：
+      前者把机制放在损失里，后者没有跨模态设计。</li>
+    <li>MDReID 从第 1 行就与其他方法不同，第 2、3、6 行跟着全变。</li>
+  </ul>
+  <h3>各方法引入的模块，分别针对什么问题</h3>
+  <table id="module-table"></table>
+  <p><b>另两个方法没有分数</b>：MDReID 要求三模态像素级配准的拼接图，而我们的数据三种相机独立拍摄、
+  张数都不相等，硬跑就得自己编一个对应关系 —— 改完测的就不是它了；BBDM 不是检索方法，
+  是生成伪 SAR 图的扩散模型。</p>
+  <details class="src"><summary>一处容易看错：MOS 的第 9 步</summary>
+    <p>MOS 的仓库里另有一条推理路径（先用生成器造伪 SAR 图再双侧融合，CDGF），但那个生成器
+    <b>不在发布代码里</b> —— 三个入口文件对 <code>cdgf|diffus|bbdm|bridge</code> 的命中数全是 0。
+    所以本项目跑的是不含它的路径，论文自己报的 59.3 / 68.2 也是这个口径。</p></details>
+  <details class="src" id="src-methods"><summary>出处</summary></details>
+</section>
+
+<section id="xm-recipe">
+  <p class="eyebrow">02.3 前提</p><h2>配方是否一致：十四项里三项不一致</h2>
+  <p>比分数之前先确认：这四个方法是不是在同一套设置下训出来的。</p>
+  <table id="recipe-table"></table>
+  <p>批大小那项不影响分数（测试阶段模型不再更新）。epoch 与学习率<b>有意没统一</b> ——
+  每个方法用作者自己调好的配方，强行统一会让至少两个方法跑在没调过的设置上。
+  代价：下面两张表比的是<b>各方法在自己配方下的成绩</b>。</p>
+  <details class="src"><summary>配置文件里有两个「死键」</summary>
+    <p>里面写着「学习率在第 40、70 轮阶梯下降」，而四个方法实际跑的都是余弦衰减 ——
+    上游那个阶梯调度器有 bug 调不到。照配置字面去写「学习率怎么降」会写错。</p></details>
+  <details class="src" id="src-recipe"><summary>出处</summary></details>
+</section>
+
+<section id="xm-hoss">
+  <p class="eyebrow">02.4 结果一</p><h2>HOSS：专门方法确实更高，但其中一截来自起步权重</h2>
+  <p>表里是 mAP（检索精度，0 到 100，越大越好）。四个检索方向，再加一个把全部查询混在一起算的总体分：
+  光学搜 SAR、SAR 搜光学是跨模态，另两个是同模态。</p>
+  <table id="hoss-table"></table>
+  <figure><div id="hoss-chart"></div>
+    <figcaption id="hoss-cap"></figcaption></figure>
+  <div id="hoss-points"></div>
+  <h3>TransReID 为什么有两行</h3>
+  <p>三个专门方法都从同一份权重起步（TransOSS 作者用成对光学-SAR 图做的域内跨模态预训练），
+  TransReID 原样跑则从 ImageNet 起步 —— 不拆开，预训练的功劳会被算到跨模态设计头上。
+  所以把它也换成同一份权重重训一遍，脚本里<b>只改这一个变量</b>。</p>
+  <div class="take" id="split-take"></div>
+  <p class="dim">CMShipReID 上还没做这件事，所以下一张表里「专门化高多少」仍混着这两个原因，重跑已排期。</p>
+  <details class="src" id="src-hoss"><summary>出处</summary></details>
+</section>
+
+<section id="xm-cm">
+  <p class="eyebrow">02.5 结果二</p><h2>CMShipReID：六个方向的难易差 14 倍，不能并列排名</h2>
+  <p>这个数据集有三种相机 —— 可见光（VIS）、近红外（NIR）、热红外（TIR），两两互检共六个方向。
+  十八格全部自训、一格没抄论文（脚本当场比对训练日志与权重文件）。</p>
+  <table id="cm-table"></table>
+  <div class="take" id="cm-odd"></div>
+  <p>先查数据本身：<b>在原始像素上量可分性</b> —— 同身份跨模态相似度减异身份跨模态相似度，
+  差越大说明这一对模态越容易分出同一条船。用原始像素而不是模型特征，否则是循环论证。</p>
+  <table id="gap-table"></table>
+  <figure><div id="gain-chart"></div>
+    <figcaption>左边是数据本身有多可分，右边是专门方法相对 TransReID 的收益。
+      三个模态对、六个方向、十八个差全部单调，而且符号只在可分性最高的那一对上翻转。</figcaption></figure>
+  <div class="take" id="cm-take"></div>
+  <p>这一条<b>不受配方不一致影响</b>：每个方法在三个模态对上用的是同一套自己的配方，
+  配方影响的是每一行的整体高低，影响不了行内各列之间的变化。</p>
+  <details class="src"><summary>一处未解决的歧义：NIR 与 TIR 可能标反了</summary>
+    <p>官方文档说只有 134 艘有 NIR，实发数据却是 NIR 138 艘、TIR 134 艘，用数量与分辨率都判不出
+    是文档写错还是目录标反。我们按目录名处理 —— <b>别人论文里的「VIS 搜 TIR」可能与这里不是同一件事。</b></p></details>
+  <details class="src" id="src-cm"><summary>出处</summary></details>
+</section>
+
+<section id="xm-ours">
+  <p class="eyebrow">02.6 我们自己做的</p><h2>十二轮实验，两个正结果</h2>
+  <p>A 到 D 是诊断，E 到 K 是把「在冻结或轻训的特征上换一个更强的匹配器」这一族形态逐个试穷。
+  每一轮起跑前都写死了「什么算成立、什么算否掉」，所以连「预测错了」都是记录。</p>
+  <div class="cards" id="ak-cards"></div>
+  <div class="take">
+    <p><b>价值不在提分，在于把一整类做法试到头、不再试</b>：六种做法全测过，没有一种拿到 A 说的那
+    40–50 分头部空间。<b>但这只说明这六种在这个基准上不行，不等于这条路一定不行。</b></p>
+  </div>
+  <details class="src" id="src-ak"><summary>出处</summary></details>
+</section>
+
+<section id="comp6">
+  <p class="eyebrow">03</p><h1>赛题 6：跨模态舰船重识别</h1>
+  <p class="lede">两种卫星拍同一片海。光学卫星拍的是肉眼看得懂的照片，雷达卫星（SAR）拍的是
+  雷达回波、灰白没有颜色。比赛给一张图，要求从另一种图的图库里把同一条船排到前面，
+  四个方向都要做，分数综合四个方向算、满分 100。</p>
+  <p>难在可用的线索太少：颜色和纹理在雷达图里不存在，而船的外形轮廓，
+  <a href="#xm-problem">上一节</a>实测过它的判别力只有 0.4991，和抛硬币一样。</p>
+  <table id="c6-qa"></table>
+</section>
+
+<section id="c6-score">
+  <p class="eyebrow">03.1</p><h2>考了多少：86.48，未晋级</h2>
+  <p>这个数要分两段看 —— 后一段<b>换一套测试数据就没有了</b>。</p>
+  <figure><div id="c6-seg"></div>
+    <figcaption id="c6-seg-cap"></figcaption></figure>
+  <div class="take" id="c6-seg-take"></div>
+</section>
+
+<section id="c6-track">
+  <p class="eyebrow">03.2</p><h2>分是怎么涨上来的</h2>
+  <p>每天只能提交 3 次，十一天一共约 33 个名额，所以问题不是「还能试什么」，而是
+  <b>下一格花在哪里最值</b>。一共生成 44 份，平台回报 28 份。</p>
+  <p class="dim">鼠标移到任一个点看那一份改了什么；<b>点一下可以钉住</b>，投屏时用得上。</p>
+  <figure><div id="c6-track-chart"></div>
+    <div class="flow-detail" id="c6-track-detail"></div>
+    <figcaption id="c6-track-cap"></figcaption></figure>
+  <h3>真正起作用的是四件事</h3>
+  <div class="cards" id="c6-four"></div>
+  <details class="src"><summary>28 份提交逐条</summary><table id="c6-subs"></table></details>
+</section>
+
+<section id="c6-leak">
+  <p class="eyebrow">03.3</p><h2>测试集是怎么被解出来的</h2>
+  <p>第四件事不动模型、也不重训，它来自把测试集的构造查清楚。三步，<b>按「下一步」看</b>：</p>
+  <div class="flowbar">
+    <button class="btn" id="leak-next">下一步</button>
+    <button class="btn" id="leak-reset">回到开头</button>
+    <span class="flow-count" id="leak-count"></span>
+  </div>
+  <div id="c6-leak-fig"></div>
+  <div class="flow-detail" id="c6-leak-detail"></div>
+  <h3>先查的是指纹</h3>
+  <table id="c6-fp"></table>
+  <div class="take" id="c6-leak-take"></div>
+</section>
+
+<section id="c6-local">
+  <p class="eyebrow">03.4</p><h2>本地测试为什么和线上对不上</h2>
+  <p>我们自己留了一部分船做本地验证集，用它预先判断一个改动好不好，不花提交名额。
+  但它只在一类改动上说得准。</p>
+  <figure><div id="c6-dumb"></div>
+    <figcaption>空心是本地测的涨跌，实心是线上实际的涨跌。两端落在零线同一侧＝本地说对了方向；
+      跨过零线＝方向说反了。</figcaption></figure>
+  <div class="take">
+    <p><b>前三行只改排序，本地全说对；后四行要重新训练，三次说反。</b>
+    凡是会产生<b>新训练的模型</b>的改动，本地就测不准 —— 本地验证集的身份和线上不是同一批，
+    模型一重训，它在两批身份上的表现就不再同向。</p>
+  </div>
+  <p class="dim">另一个竞赛（天智杯科目三）这里不展开：目标是镜像能在平台真机上跑通并出分，
+  已达成，成绩 0.20513；它留下的是一条能用的交付链路。</p>
+</section>
+<section id="stream">
+  <p class="eyebrow">04</p><h1>流式新增样本下的持续重识别</h1>
+  <p class="lede">部署之后，新的船、新的航次会一批一批地来。每来一批就把全部历史数据重新训一遍
+  不现实，而只用新数据接着训，模型会在旧身份上退化。这一节答三件事：
+  <b>选哪个做法、要留多少旧数据、为什么是这样。</b></p>
+  <table id="st-bench"></table>
+  <p class="dim" id="st-bench-note"></p>
+</section>
+
+<section id="st-split">
+  <p class="eyebrow">04.1 前提</p><h2>数据怎么切的：四批不等分，第三批教不了跨相机匹配</h2>
+  <p>数据本来就按拍摄序列编号，按自然顺序每三段一组切成四批，最后一段整段留出来不训练、
+  专门用来看从没训练过的数据上表现如何。<b>没有手挑</b> —— 任何「为了均衡去挑序列」都是对结果的挑选。</p>
+  <table id="st-batches"></table>
+  <p>最后一列是这一批里有多少条船<b>两种相机都拍到了</b>。模型要学的是「同一条船在两种相机下
+  看起来不一样，但还是同一条」，只有两种相机都有的船才能教这件事。第 3 批只有 17.2%，
+  <b>它在构造上就几乎教不了跨相机匹配</b> —— 不说这条，「学完第 3 批掉分」会被读成方法不行。</p>
+  <details class="src" id="src-st-split"><summary>出处</summary></details>
+</section>
+
+<section id="st-pick">
+  <p class="eyebrow">04.2 第一问</p><h2>选经验回放</h2>
+  <p>五个做法用的是同一套训练流程、同一个主干网络（TransOSS），区别只在
+  「训下一批时，拿什么办法护住前面学过的东西」：</p>
+  <ul id="st-how"></ul>
+  <p>成绩是十个种子的均值。四个分数：刚学完的那个批次（学新东西的能力）、此前学过的旧批次
+  （保住旧东西的能力）、已见过的全部批次、从未训练过的那一段数据。<b>遗忘量</b>是一批数据
+  学完时的最高分减去全部学完时的分数，越小越好。</p>
+  <table id="st-arms"></table>
+  <div id="st-three"></div>
+  <h3>经验回放与「经验回放加知识蒸馏」，哪个更好</h3>
+  <p>这两行总分几乎一样，所以逐个分数两两对着比，并且每个分数都先算出<b>这个实验能分辨的最小差</b>。</p>
+  <figure><div id="st-paired-chart"></div>
+    <figcaption>每行两个点是两个做法的成绩，右边那根短尺是这个分数上能分辨的最小差；
+      差没越过它就不下判断。</figcaption></figure>
+  <table id="st-paired"></table>
+  <div class="take" id="st-pick-take"></div>
+  <details class="src" id="src-st-pick"><summary>出处</summary></details>
+</section>
+
+<section id="st-budget">
+  <p class="eyebrow">04.3 第二问</p><h2>每个身份留 4 张真图，拿回 69.8%</h2>
+  <figure><div id="st-curve"></div>
+    <figcaption id="st-curve-cap"></figcaption></figure>
+  <table id="st-store"></table>
+  <div class="take" id="st-store-take"></div>
+  <details class="src" id="src-st-budget"><summary>出处</summary></details>
+</section>
+
+<section id="st-why">
+  <p class="eyebrow">04.4 第三问</p><h2>旧数据必须以真实像素参与修正主干</h2>
+  <p>前两问的答案为什么是这样，取决于旧数据到底提供了什么。做法是一刀一刀地切，每次只动一件事。
+  <b>「切断梯度」指的是：旧图照常喂进去、照常走一遍模型，只是不让它们产生的误差信号去修正主干网络。</b></p>
+  <figure><div id="st-inter"></div>
+    <figcaption>五轮干预，每轮两组对照、各十个种子。前三条超出波动范围，而且换数据集、
+      换相机对都成立；后两条比波动还小，与「一张旧图都不存」分辨不出。</figcaption></figure>
+  <div class="take" id="st-why-take"></div>
+  <details class="src" id="src-st-why"><summary>出处</summary></details>
+</section>
+
+<section id="st-rounds">
+  <p class="eyebrow">04.5</p><h2>这条线跑过的二十轮</h2>
+  <p>上面三问各自只用到其中几轮，全部列在这里，<b>被推翻的预测也留着</b>。
+  数据集一列不要略过：换数据集重测过的只有 H 与 M3 两轮。</p>
+  <table id="st-roster"></table>
+  <details class="src" id="src-st-rounds"><summary>出处</summary></details>
+</section>
+<section id="neg">
+  <p class="eyebrow">05</p><h1>没成的那些</h1>
+  <p class="lede">这一节讲失败。<b>只报成功会让后面的人重犯同样的错</b> ——
+  所以预测错了的、方向走不通的，都留在这里。上一节那条机制结论是成立的，
+  但<b>想据此做出一个更好的方法，没成</b>。两件事得分开讲。</p>
+</section>
+
+<section id="neg-pick">
+  <p class="eyebrow">05.1</p><h2>想做的方法，为什么没成</h2>
+  <p>上一节的结论是：旧数据必须留真实的图片，而且每个身份留 4 张就能拿回七成效果。
+  那下一个问题很自然：<b>留哪 4 张？</b></p>
+  <p>当时的想法是挑「对模型影响最大」的那几张。训练时每张旧图都会推着模型改一点点，
+  有的推得多、有的推得少 —— 留推得多的，听起来显然更划算。
+  做法是三组各跑十次：一组留推得最多的，一组<b>随机留</b>当对照，一组留推得最少的。</p>
+  <figure><div id="neg-chart"></div>
+    <figcaption>竖虚线是随机留的成绩。四根横条全落在它左边 ——
+      <b>四种挑法，没有一种比随机留更好。</b></figcaption></figure>
+  <table id="neg-table"></table>
+  <div class="take" id="neg-take"></div>
+  <p>这条负结果的代价很具体：<b>原本准备投的那篇论文没有可比的对象了</b> ——
+  它要比的就是我们自己的挑样方法，而实测它不成立。</p>
+  <h3>另外三条，连同起跑前写下的预测</h3>
+  <p class="dim">每一轮起跑前都要先写一份文件，把「想得到什么、什么算成立、什么算否掉」
+  写死再提交。所以预测错了这件事本身也留了痕。</p>
+  <table id="neg-others"></table>
+
+  <h3>还有一次，我们把一个说不清来源的差值当成了发现</h3>
+  <p>第二天撤回了。<b>不是数算错</b> —— 是两组对照之间不止差一件事。
+  做对照实验时，两组之间只能差你要测的那一件；那一轮实际差了 <b>7 件</b>，
+  其中一件是训练时最后那层分类器，一组输出 25 个、另一组输出 100 个，
+  <b>光这一件就足以解释我看到的那个差值</b>。</p>
+  <p>从那次之后，这三件事每轮都要做：</p>
+  <ol id="neg-rules"></ol>
+  <p class="dim">第二条尤其便宜：那一轮出问题那组的训练损失是 <b>2.070</b>、正常那组是
+  <b>0.024</b>，差两个量级 —— 一眼就能看出它根本没练下去，而「没练下去」和
+  「这个改动有害」在最终分数上长得一模一样。</p>
+</section>
+
+<section id="iod">
+  <p class="eyebrow">06</p><h1>增量目标检测：科研与软件两条线</h1>
+  <p class="lede">检测模型部署之后要加新类别。重新用全部数据训一遍代价太大，而只用新类别的数据
+  接着训，旧类别会被灾难性遗忘。<b>科研那半</b>把三条主流技术路线各复现一遍、测准，
+  再追一个没追到底的差距；<b>软件那半</b>把这些能力包成别人能调的东西。</p>
+  <div class="take">
+    <p><b>它比增量分类难，难在一个具体的地方。</b>划分脚本只保留本阶段那一半类别的标注，
+    而图是重叠的 —— 前 40 类 97180 张、后 40 类 54593 张，训练集共 118287 张，
+    所以同一张图平均出现在 <b>1.28</b> 个阶段里。于是增量阶段的那些图里，旧类别的物体
+    <b>像素还在、标注没了，被当成背景</b>。训练信号在主动告诉模型「这里什么都没有」，
+    而那里站着一个它以前认识的东西。</p>
+  </div>
+</section>
+
+<section id="iod-methods">
+  <p class="eyebrow">06.1 科研</p><h2>三个方法各怎么做</h2>
+  <p>三条路线各取一个代表，刻意覆盖不同的技术栈。下面这张图把它们在增量阶段的构件对齐。
+  <b>点方法名</b>可只看它自己那一列特有的做法。</p>
+  <div class="pipe" id="iod-grid"></div>
+  <div class="legend">
+    <span><i class="s"></i>这一行里与别人相同的做法</span>
+    <span><i class="d"></i>只有它这么做</span>
+  </div>
+  <p class="dim" id="iod-grid-note"></p>
+  <details class="src" id="src-iod-methods"><summary>出处</summary></details>
+</section>
+
+<section id="iod-repro">
+  <p class="eyebrow">06.2 科研</p><h2>三个方法都复现到论文附近</h2>
+  <table id="iod-repro-t"></table>
+  <p class="dim">「我方实测」那一列的 AP 是 0 到 1 的小数，「对论文」那一列是百分点：0.017 就是 1.7 点。</p>
+  <h3>「能分辨的最小差」必须按范围分开给</h3>
+  <p>同代码、同数据、只换随机种子跑三次，三个范围的抖动不是一个量级 ——
+  这是这条线更正过的一个错。</p>
+  <figure><div id="iod-noise"></div>
+    <figcaption id="iod-noise-cap"></figcaption></figure>
+  <div class="take" id="iod-noise-take"></div>
+  <details class="src" id="src-iod-repro"><summary>出处</summary></details>
+</section>
+
+<section id="iod-why">
+  <p class="eyebrow">06.3 科研</p><h2>新类比论文低的那 3.8 点，查到哪一步了</h2>
+  <p>先说清楚这 3.8 点是什么。ERD 在 40+40 这个设定下，论文报的三个数与我们复现出来的
+  三个数相减：</p>
+  <table id="iod-gap"></table>
+  <p><b>复现的缺口全部集中在新类这一栏</b> —— 旧类不但没掉、还略高，而全部 80 类那 1.7 点
+  正是新类这一栏带下来的（全部 80 类是旧新两半合在一起算的）。</p>
+  <h3>六个角度逐个查过，没有一条能解释它</h3>
+  <table id="iod-angles"></table>
+  <h3>最直觉的那个解释被推翻了</h3>
+  <figure><div id="iod-mis"></div>
+    <figcaption>如果新类是被旧类的蒸馏信号压制或抢走，右边那条该是大头。实际只有一成半 ——
+      新类之间互相认错才是主要去向。所以候选陈述换成「新类学到了，但彼此分不开」，
+      这是候选，不是结论。</figcaption></figure>
+  <details class="src" id="src-iod-why"><summary>出处</summary></details>
+</section>
+
+<section id="iod-backend">
+  <p class="eyebrow">06.4 软件</p><h2>后端：点一下「训练」之后，发生了什么</h2>
+  <p>服务进程跑在服务器上 —— 卡、上游仓库、数据集、权重都在那边。它<b>只监听 127.0.0.1</b>，
+  本地用一条 SSH 把端口转发过来，浏览器开本机那个地址，所以本机不需要装任何东西。</p>
+  <p class="dim">下面这条链路可以一步一步看。<b>按「走一遍」</b>，或者直接点某一步。</p>
+  <div class="flowbar">
+    <button class="btn" id="flow-play">走一遍</button>
+    <button class="btn" id="flow-reset">回到开头</button>
+    <span class="flow-count" id="flow-count"></span>
+  </div>
+  <div class="flow" id="iod-flow"></div>
+  <div class="note">
+    <p><b>为什么不直接调插件的训练函数。</b>插件内部用的是阻塞式调用：它等到训练结束才返回，
+    拿不到子进程的 pid，于是「实时日志」和「停止」这两件都做不到。所以服务端
+    <b>只替换了「怎么等」</b> —— 命令行、环境变量、指标解析三样仍然全归插件。
+    那三样正是决定「分数怎么来」的地方，一旦服务端自己动手，界面上的数就不再是命令行那个数。</p>
+    <p><b>为什么子进程要自成进程组。</b>那张卡是共享的，上面常有别人的多日训练。「停止」按 pid
+    把整个进程组收掉，<b>不用按名字杀</b> —— 按名字杀会误伤邻居。这一条实测过两次，
+    第二次停止前卡上有邻居的三个进程、停止后一个没少。</p>
+  </div>
+  <details class="src" id="src-iod-backend"><summary>出处</summary></details>
+</section>
+
+<section id="iod-front">
+  <p class="eyebrow">06.5 软件</p><h2>前端四块，以及凭什么信它</h2>
+  <table id="iod-front-t"></table>
+  <p>界面没有另起一套逻辑：它只调那四个动作。一层封装最容易出的问题不是崩，是
+  <b>悄悄改变了算分方式</b> —— 界面上的数好看了，而那个数已经不是原来那个范围下的数。
+  所以两层的验收判据都在动手之前定死，其中最硬的一条是：</p>
+  <div class="take" id="iod-verify"></div>
+  <h3>演示时必须当场说清的三件事</h3>
+  <ol id="iod-limits"></ol>
+  <details class="src" id="src-iod-front"><summary>出处</summary></details>
+</section>
+<section id="next">
+  <p class="eyebrow">07</p><h1>下一步，以及要请示的事</h1>
+  <p class="lede">前面六节是报告，这一节是请示。<b>三件事需要你定方向</b> ——
+  它们不是做不完，是方向上的事不该我们自己拍。</p>
+  <div class="cards" id="nx-asks"></div>
+</section>
+
+<section id="nx-patent">
+  <p class="eyebrow">07.1</p><h2>专利：建议落在「压缩回放省存储」这一条</h2>
+  <p class="dim">这是建议，不是已经定下的方案 —— 写在这里是为了讨论有个起点。</p>
+  <div class="checkgrid">
+    <div class="checkbox miss"><h4>为什么不能拿方法那条线写</h4><ul id="nx-no"></ul></div>
+    <div class="checkbox ok"><h4>为什么落在存储这一条</h4><ul id="nx-yes"></ul></div>
+  </div>
+  <p>权利要求可以落在「压缩回放」这套做法上，有益效果就是那条实测的存储与分数曲线
+  （<a href="#st-budget">见 04.3</a>），每个数都有日志出处。</p>
+  <div class="take"><p><b>署名与第一单位需要当面请示。</b></p></div>
+</section>
+
+<section id="nx-plan">
+  <p class="eyebrow">07.2</p><h2>接下来两周</h2>
+  <table id="nx-plan-t"></table>
+  <p class="dim">每一行在 <code>ROADMAP.md</code> 里都写死了什么情况下停、什么情况下继续，
+  没写的不许起跑。</p>
+  <div class="note">
+    <p><b>这份网页和那份 PDF 是同一批数。</b>页面上的数没有一个是手抄的：全部由
+    <code>gen_data.py</code> 从原始记录生成，每个值带文件与行号，出处收在各节末尾的折叠区里。
+    源表改了而页面没重新生成，闸门会拦住。</p>
+  </div>
+</section>
+
+</div>
+</main>
+
+<script src="data.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
