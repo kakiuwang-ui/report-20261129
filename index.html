@@ -16,9 +16,11 @@
      内联不违反「整页零外链」—— 零外链管的是请求，这里一个请求都不发。 -->
 <script>
 (function () {
-  var t = "light";
-  try { t = localStorage.getItem("gis-web-theme") || "light"; } catch (e) { /* 隐私模式 */ }
-  document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  // 默认深色。读不到存的选择（首次打开、隐私模式）就按深色走；
+  // 存过选择的人仍然按自己选的来 —— 默认值只管第一次。
+  var t = "dark";
+  try { t = localStorage.getItem("gis-web-theme") || "dark"; } catch (e) { /* 隐私模式 */ }
+  document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
 }());
 </script>
 </head>
@@ -27,7 +29,7 @@
 <nav class="rail" aria-label="目录">
   <a class="brand" href="#top"><b>八月以来的三块工作</b><span>2026-11-29 组会 · 网页版</span></a>
   <button class="themebtn" id="theme" type="button"
-          title="在 浅色 / 深色 之间切换">主题：浅色</button>
+          title="在 浅色 / 深色 之间切换">主题：深色</button>
   <ol>
     <li><a class="item" href="#top"><span class="ix">00</span><span>概览</span></a></li>
     <li><a class="item" href="#route"><span class="ix">01</span><span>这条线怎么走的</span></a></li>
