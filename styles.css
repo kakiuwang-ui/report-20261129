@@ -167,6 +167,11 @@ svg .barOld{fill:var(--old)} svg .barNew{fill:var(--new)} svg .barDim{fill:var(-
 .card .verdict{font-size:.74rem;border-radius:3px;padding:.05rem .4rem;border:1px solid currentColor}
 .card .did{font-size:.86rem;color:var(--dim);margin:.4rem 0 .3rem}
 .card .got{font-size:.9rem}
+/* 单列卡片：模块那四段是三四句话的说明，挤成两列就又回到「行话」那个状态。 */
+.cards.wide{grid-template-columns:1fr}
+.cards.wide .did,.cards.wide .got{font-size:.95rem;color:var(--ink)}
+.cards.wide .did{margin:.5rem 0 .45rem}
+.cards.wide .verdict{color:var(--dim)}
 .v-正{color:var(--ok)} .v-负{color:var(--bad)} .v-证伪{color:var(--new)}
 .v-无效应{color:var(--dim)} .v-纠正{color:var(--old)}
 
